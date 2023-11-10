@@ -5,24 +5,6 @@ const server = require("../server");
 
 chai.use(chaiHttp);
 
-// HTML Fields
-// issue_title: string
-// issue_text: string
-// created_by: string
-// assigned_to (optional): string
-// status_text (optional): string
-
-// {project}
-// _id: string
-// issue_title: string
-// issue_text: string
-// status_text: string
-// created_by: string
-// assigned_to: string
-// created_on: string (date/time)
-// updated_on: string (date/time)
-// open: boolean
-
 suite("/api/issues/:project", function () {
   let project = "apitest";
   let endpoint = `/api/issues/${project}`;
@@ -32,14 +14,29 @@ suite("/api/issues/:project", function () {
     badRequest: 400,
     noContent: 204,
   };
+
   test("GET returns all issues array with all fields", (done) => {
+    let issueFields = [
+      "_id",
+      "issue_title",
+      "issue_text",
+      "created_by",
+      "assigned_to",
+      "status_text",
+      "created_on",
+      "updated_on",
+      "open",
+    ];
     chai
       .request(server)
       .keepOpen()
       .get(endpoint)
       .end((err, res) => {
         assert.equal(res.status, httpsResponse.ok);
-        assert.fail("GET request not implemented yet");
+        assert.isArray(res.body, "Response should be an array");
+        res.body.forEach((issue) => {
+          issueFields.forEach((field) => assert.property(issue, field));
+        });
         done();
       });
   });
@@ -91,7 +88,9 @@ suite("/api/issues/:project", function () {
       .send(newIssue)
       .end((err, res) => {
         assert.equal(res.status, httpsResponse.created);
-        assert.fail("POST request not implemented yet");
+        Object.keys(newIssue).forEach((key) => {
+          assert.equal(res.body[key], newIssue[key]);
+        });
         done();
       });
   });
@@ -153,8 +152,14 @@ suite("/api/issues/:project", function () {
       .send(updateIssue)
       .end((err, res) => {
         assert.equal(res.status, httpsResponse.ok);
-        assert.fail("PUT request not implemented yet");
-        done();
+        assert.equal(res.body.result, successMessage.result);
+        Object.keys(updateIssue).forEach((key) => {
+          if (key !== "_id") {
+            assert.equal(res.body[key], updateIssue[key]);
+          }
+          assert.fail("PUT request not implemented yet");
+          done();
+        });
       });
   });
 
@@ -259,6 +264,7 @@ suite("/api/issues/:project", function () {
       .send(deleteIssue)
       .end((err, res) => {
         assert.equal(res.status, httpsResponse.noContent);
+        assert.equal(res.body.result, successMessage.result);
         assert.fail("DELETE request not implemented yet");
         done();
       });
