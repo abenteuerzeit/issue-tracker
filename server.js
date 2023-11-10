@@ -12,6 +12,11 @@ const runner            = require('./test-runner');
 
 let app = express();
 
+if (process.env.NODE_ENV === 'development') {
+  const morgan = require('morgan');
+  app.use(morgan('dev'));
+}
+
 app.use('/public', express.static(process.cwd() + '/public'));
 
 app.use(cors({origin: '*'})); //For FCC testing purposes only
