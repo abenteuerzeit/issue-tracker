@@ -21,6 +21,9 @@
         "type": "git",
         "url": "https://github.com/abenteuerzeit/issue-tracker"
     },
+    "repl": {
+        "url": "https://issue-tracker.abenteuerzeit.repl.co/"
+    },
     "keywords": [
         "node",
         "hyperdev",
@@ -30,7 +33,7 @@
     "devDependencies": {
         "morgan": "^1.10.0",
         "nodemon": "^3.0.1"
-    }, 
+    },
     "nodemonConfig": {
         "verbose": true
     }
