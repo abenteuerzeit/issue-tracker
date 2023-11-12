@@ -1,53 +1,61 @@
 "use strict";
 
-module.exports = function (app) {
-  app
-    .route("/api/issues/:project")
+const { getIssues, createIssue, updateIssue, deleteIssue } = require("./db");
 
-    .get(function (req, res) {
-      let project = req.params.project;
+module.exports = function(app) {
+    app.route("/api/issues/:project")
 
-      const generateObjectId = () => {
-        const timestamp = ((new Date().getTime() / 1000) | 0).toString(16);
-        const objectId =
-          timestamp +
-          "xxxxxxxxxxxxxxxx"
-            .replace(/[x]/g, () => {
-              return ((Math.random() * 16) | 0).toString(16);
-            })
-            .toLowerCase();
+        .get(function(req, res) {
+            let project = req.params.project;
+            const issues = getIssues(project, req.query);
+            res.status(200).send(issues);
+        })
 
-        return objectId;
-      };
-      const generateMockIssues = (count) => {
-        const mockIssues = [];
-        for (let i = 0; i < count; i++) {
-          mockIssues.push({
-            _id: generateObjectId(),
-            issue_title: "Issue title " + i,
-            issue_text: "Issue text for issue " + i,
-            created_on: new Date().toISOString(),
-            updated_on: new Date().toISOString(),
-            created_by: "User" + i,
-            assigned_to: "User" + (i % 2 === 0 ? i : "Joe"),
-            open: i % 2 === 0,
-            status_text: i % 2 === 0 ? "In QA" : "Resolved",
-          });
-        }
-        return mockIssues;
-      };
-      res.json(generateMockIssues(10));
-    })
+        .post(function(req, res) {
+            let project = req.params.project;
+            if (!req.body.issue_title || !req.body.issue_text || !req.body.created_by) {
+                return res.status(400).send({ error: 'required field(s) missing' });
+            }
+            const newIssue = createIssue(project, req.body);
+            res.status(201).send(newIssue);
+        })
 
-    .post(function (req, res) {
-      let project = req.params.project;
-    })
+        .put(function(req, res) {
+            let project = req.params.project;
+            const { _id } = req.body;
+            if (!_id) {
+                return res.status(400).send({
+                    error: 'missing _id'
+                });
+            }
 
-    .put(function (req, res) {
-      let project = req.params.project;
-    })
+            if (Object.keys(req.body).length <= 1) {
+                return res.status(400).send({ error: 'no update field(s) sent', '_id': _id });
+            }
 
-    .delete(function (req, res) {
-      let project = req.params.project;
-    });
+            const result = updateIssue(project, req.body);
+
+            if (result.error) {
+                res.status(400).send({ error: result.error, '_id': _id });
+            } else {
+                res.status(200).send(result);
+            }
+        })
+
+        .delete(function(req, res) {
+            let project = req.params.project;
+            const { _id } = req.body;
+
+            if (!_id) {
+                return res.status(400).send({ error: 'missing _id' });
+            }
+
+            const result = deleteIssue(project, _id);
+
+            if (result.error) {
+                res.status(400).send({ error: result.error, '_id': _id });
+            } else {
+                res.status(200).send(result);
+            }
+        });
 };
