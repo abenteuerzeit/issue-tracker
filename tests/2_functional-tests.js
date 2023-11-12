@@ -5,302 +5,340 @@ const server = require("../server");
 
 chai.use(chaiHttp);
 
-suite("/api/issues/:project", function () {
-  let project = "apitest";
-  let endpoint = `/api/issues/${project}`;
-  const httpsResponse = {
-    ok: 200,
-    created: 201,
-    badRequest: 400,
-    noContent: 204,
-  };
-
-  test("GET returns all issues array with all fields", (done) => {
-    let issueFields = [
-      "_id",
-      "issue_title",
-      "issue_text",
-      "created_by",
-      "assigned_to",
-      "status_text",
-      "created_on",
-      "updated_on",
-      "open",
-    ];
-    chai
-      .request(server)
-      .keepOpen()
-      .get(endpoint)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.ok);
-        assert.isArray(res.body, "Response should be an array");
-        res.body.forEach((issue) => {
-          issueFields.forEach((field) => assert.property(issue, field));
-        });
-        done();
-      });
-  });
-
-  test("GET filters issues by a single query parameter", (done) => {
-    let parameters = { open: true };
-
-    chai
-      .request(server)
-      .keepOpen()
-      .get(endpoint)
-      .query(parameters)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.ok);
-        assert.fail("GET request not implemented yet");
-        done();
-      });
-  });
-
-  test("GET filters issues by multiple query parameters", (done) => {
-    let parameters = { open: true, created_by: "Joe" };
-
-    chai
-      .request(server)
-      .keepOpen()
-      .get(endpoint)
-      .query(parameters)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.ok);
-        assert.fail("GET request not implemented yet");
-        done();
-      });
-  });
-
-  test("POST creates an issue with required fields", (done) => {
-    // Required: issue_title, issue_text, created_by
-    let newIssue = {
-      issue_title: "new issue test",
-      issue_text: "new issue text",
-      created_by: "Joe",
-      assigned_to: "Joe",
-      status_text: "new issue status text",
+suite("/api/issues/:project", function() {
+    let project = "apitest";
+    let endpoint = `/api/issues/${project}`;
+    const httpsResponse = {
+        ok: 200,
+        created: 201,
+        badRequest: 400,
+        noContent: 204,
     };
-    chai
-      .request(server)
-      .keepOpen()
-      .post(endpoint)
-      .type("form")
-      .send(newIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.created);
-        Object.keys(newIssue).forEach((key) => {
-          assert.equal(res.body[key], newIssue[key]);
-        });
-        done();
-      });
-  });
 
-  test("POST creates an issue with optional fields defaulted", (done) => {
-    /// Required: issue_title, issue_text, created_by
-    // Optional:
-    // created_on (date/time)
-    // updated__on (date/time)
-    // open (boolean, true by default when open, false when closed)
-    // _id
-    let newIssue = {
-      issue_title: "new issue test",
-      issue_text: "new issue text",
-      created_by: "Joe",
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .post(endpoint)
-      .type("form")
-      .send(newIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.created);
-        assert.fail("POST request not implemented yet");
-        done();
-      });
-  });
+    test("GET returns all issues array with all fields", (done) => {
+        let issueFields = [
+            "_id",
+            "issue_title",
+            "issue_text",
+            "created_by",
+            "assigned_to",
+            "status_text",
+            "created_on",
+            "updated_on",
+            "open",
+        ];
+        chai
+            .request(server)
+            .keepOpen()
+            .get(endpoint)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.ok);
+                assert.isArray(res.body, "Response should be an array");
+                res.body.forEach((issue) => {
+                    issueFields.forEach((field) => assert.property(issue, field));
+                });
+                done();
+            });
+    });
 
-  test("POST returns an error when required fields are missing", (done) => {
-    let errorMessage = { error: "required field(s) missing" };
-    let newIssue = {};
-    chai
-      .request(server)
-      .keepOpen()
-      .post(endpoint)
-      .type("form")
-      .send(newIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.badRequest);
-        assert.fail("POST request not implemented yet");
-        done();
-      });
-  });
+    test("GET filters issues by a single query parameter", (done) => {
+        let parameters = { open: true };
 
-  test("PUT updates issue fields and updated_on timestamp when a single field is updated", (done) => {
-    // Update by _id
-    // update updated_on
-    let successMessage = { result: "successfully updated", _id: _id };
-    let updateIssue = {
-      _id: "5871dda29faedc3491ff93bb",
-      open: false,
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .put(endpoint)
-      .type("form")
-      .send(updateIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.ok);
-        assert.equal(res.body.result, successMessage.result);
-        Object.keys(updateIssue).forEach((key) => {
-          if (key !== "_id") {
-            assert.equal(res.body[key], updateIssue[key]);
-          }
-          assert.fail("PUT request not implemented yet");
-          done();
-        });
-      });
-  });
+        chai
+            .request(server)
+            .keepOpen()
+            .get(endpoint)
+            .query(parameters)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.ok);
+                assert.isArray(res.body, "Response should be an array");
+                res.body.forEach(issue => {
+                    assert.property(issue, 'open');
+                    assert.equal(issue.open, parameters.open);
+                });
+                done();
+            });
+    });
 
-  test("PUT updates issue fields and updated_on timestamp when multiple fields are updated", (done) => {
-    // Update by _id
-    // update updated_on
-    let successMessage = { result: "successfully updated", _id: _id };
-    let updateIssue = {
-      _id: "5871dda29faedc3491ff93bb",
-      issue_title: "Updated issue title",
-      issue_text: "Updated issue text",
-      created_by: "Updated created by",
-      assigned_to: "Updated assigned to",
-      status_text: "Updated status text",
-      open: true,
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .put(endpoint)
-      .type("form")
-      .send(updateIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.ok);
-        assert.fail("PUT request not implemented yet");
-        done();
-      });
-  });
 
-  test("PUT returns an error when _id is missing", (done) => {
-    let errorMessage = { error: "missing _id" };
-    let updateIssue = {
-      issue_title: "Updated issue title",
-      issue_text: "Updated issue text",
-      created_by: "Updated created by",
-      assigned_to: "Updated assigned to",
-      status_text: "Updated status text",
-      open: true,
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .put(endpoint)
-      .type("form")
-      .send(updateIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.badRequest);
-        assert.fail("PUT request not implemented yet");
-        done();
-      });
-  });
+    test("GET filters issues by multiple query parameters", (done) => {
+        let parameters = { open: true, created_by: "Joe" };
 
-  test("PUT returns an error when no update fields are provided", (done) => {
-    // Update by _id
-    // update updated_on
-    let errorMessage = { error: "no update field(s) sent", _id: _id };
-    let updateIssue = {
-      _id: "5871dda29faedc3491ff93bb",
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .put(endpoint)
-      .type("form")
-      .send(updateIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.badRequest);
-        assert.fail("PUT request not implemented yet");
-        done();
-      });
-  });
+        chai
+            .request(server)
+            .keepOpen()
+            .get(endpoint)
+            .query(parameters)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.ok);
+                assert.isArray(res.body, "Response should be an array");
+                res.body.forEach(issue => {
+                    assert.property(issue, 'open');
+                    assert.equal(issue.open, parameters.open);
+                    assert.property(issue, 'created_by');
+                    assert.equal(issue.created_by, parameters.created_by);
+                });
+                done();
+            });
+    });
 
-  test("PUT returns an error when _id is invalid", (done) => {
-    let errorMessage = { error: "could not update", _id: _id };
-    let updateIssue = {
-      _id: "invalid id",
-      open: true,
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .put(endpoint)
-      .type("form")
-      .send(updateIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.badRequest);
-        assert.fail("PUT request not implemented yet");
-        done();
-      });
-  });
 
-  test("DELETE successfully deletes an issue with a valid _id", (done) => {
-    let successMessage = { result: "successfully deleted", _id: _id };
-    let deleteIssue = {
-      _id: "5871dda29faedc3491ff93bb",
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .delete(endpoint)
-      .type("form")
-      .send(deleteIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.noContent);
-        assert.equal(res.body.result, successMessage.result);
-        assert.fail("DELETE request not implemented yet");
-        done();
-      });
-  });
+    test("POST creates an issue with required fields", (done) => {
+        let newIssue = {
+            issue_title: "new issue test",
+            issue_text: "new issue text",
+            created_by: "Joe",
+            assigned_to: "Joe",
+            status_text: "new issue status text",
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .post(endpoint)
+            .type("form")
+            .send(newIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.created);
+                assert.isObject(res.body, "Response should be an object");
+                Object.keys(newIssue).forEach((key) => {
+                    assert.equal(res.body[key], newIssue[key]);
+                });
+                assert.property(res.body, '_id', "Response should have an _id");
+                assert.property(res.body, 'created_on', "Response should have a created_on timestamp");
+                assert.property(res.body, 'updated_on', "Response should have an updated_on timestamp");
+                assert.property(res.body, 'open', "Response should have an open status");
+                done();
+            });
+    });
 
-  test("DELETE returns an error when _id is invalid", (done) => {
-    let errorMessage = { error: "could not delete", _id: _id };
-    let deleteIssue = {
-      _id: "invalid id",
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .delete(endpoint)
-      .type("form")
-      .send(deleteIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.badRequest);
-        assert.fail("DELETE request not implemented yet");
-        done();
-      });
-  });
 
-  test("DELETE returns an error when _id is missing", (done) => {
-    let errorMessage = { error: "missing _id" };
-    let deleteIssue = {};
-    chai
-      .request(server)
-      .keepOpen()
-      .delete(endpoint)
-      .type("form")
-      .send(deleteIssue)
-      .end((err, res) => {
-        assert.equal(res.status, httpsResponse.badRequest);
-        assert.fail("DELETE request not implemented yet");
-        done();
-      });
-  });
+    test("POST creates an issue with optional fields defaulted", (done) => {
+        let newIssue = {
+            issue_title: "new issue test",
+            issue_text: "new issue text",
+            created_by: "Joe",
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .post(endpoint)
+            .type("form")
+            .send(newIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.created);
+                assert.isObject(res.body, "Response should be an object");
+                Object.keys(newIssue).forEach((key) => {
+                    assert.equal(res.body[key], newIssue[key]);
+                });
+
+                assert.property(res.body, '_id', "Response should have an _id");
+                assert.property(res.body, 'created_on', "Response should have a created_on timestamp");
+                assert.property(res.body, 'updated_on', "Response should have an updated_on timestamp");
+                assert.property(res.body, 'open', "Response should have an open status");
+                assert.strictEqual(res.body.open, true, "Open should be true by default");
+                assert.strictEqual(res.body.assigned_to, '', "Assigned to should be empty by default");
+                assert.strictEqual(res.body.status_text, '', "Status text should be empty by default");
+                done();
+            });
+    });
+
+
+    test("POST returns an error when required fields are missing", (done) => {
+        let errorMessage = { error: "required field(s) missing" };
+        let newIssue = {};
+        chai
+            .request(server)
+            .keepOpen()
+            .post(endpoint)
+            .type("form")
+            .send(newIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.badRequest, "Response should have a status of 400 Bad Request");
+                assert.deepEqual(res.body, errorMessage, "Response body should match the expected error message");
+                done();
+            });
+    });
+
+
+    test("PUT updates issue fields and updated_on timestamp when a single field is updated", (done) => {
+        let updateIssue = {
+            _id: "5871dda29faedc3491ff93bb",
+            open: false,
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .put(endpoint)
+            .type("form")
+            .send(updateIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.ok, "Response should have a status of 200 OK");
+                assert.equal(res.body.result, "successfully updated", "Response should indicate successful update");
+
+                assert.isFalse(res.body.open, "Issue open status should be updated to false");
+
+                assert.exists(res.body.updated_on, "updated_on timestamp should exist");
+                assert.notEqual(res.body.updated_on, res.body.created_on, "updated_on timestamp should differ from created_on timestamp");
+
+                done();
+            });
+    });
+
+
+    test("PUT updates issue fields and updated_on timestamp when multiple fields are updated", (done) => {
+        let updateIssue = {
+            _id: "5871dda29faedc3491ff93bb",
+            issue_title: "Updated issue title",
+            issue_text: "Updated issue text",
+            created_by: "Updated created by",
+            assigned_to: "Updated assigned to",
+            status_text: "Updated status text",
+            open: true,
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .put(endpoint)
+            .type("form")
+            .send(updateIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.ok, "Response should have a status of 200 OK");
+                assert.equal(res.body.result, "successfully updated", "Response should indicate successful update");
+
+                Object.keys(updateIssue).forEach((key) => {
+                    if (key !== "_id") {
+                        assert.equal(res.body[key], updateIssue[key], `Issue ${key} should be updated`);
+                    }
+                });
+
+                assert.exists(res.body.updated_on, "updated_on timestamp should exist");
+                assert.notEqual(res.body.updated_on, res.body.created_on, "updated_on timestamp should differ from created_on timestamp");
+
+                done();
+            });
+    });
+
+
+    test("PUT returns an error when _id is missing", (done) => {
+        let errorMessage = { error: "missing _id" };
+        let updateIssue = {
+            issue_title: "Updated issue title",
+            issue_text: "Updated issue text",
+            created_by: "Updated created by",
+            assigned_to: "Updated assigned to",
+            status_text: "Updated status text",
+            open: true,
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .put(endpoint)
+            .type("form")
+            .send(updateIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.badRequest, "Response should have a status of 400 Bad Request");
+                assert.deepEqual(res.body, errorMessage, "Response body should contain the correct error message");
+                done();
+            });
+    });
+
+
+    test("PUT returns an error when no update fields are provided", (done) => {
+        let errorMessage = { error: "no update field(s) sent", _id: "5871dda29faedc3491ff93bb" };
+        let updateIssue = {
+            _id: "5871dda29faedc3491ff93bb",
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .put(endpoint)
+            .type("form")
+            .send(updateIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.badRequest, "Response should have a status of 400 Bad Request");
+                assert.deepEqual(res.body, errorMessage, "Response body should contain the correct error message");
+                done();
+            });
+    });
+
+
+    test("PUT returns an error when _id is invalid", (done) => {
+        let invalidId = "invalid id";
+        let errorMessage = { error: "could not update", _id: invalidId };
+        let updateIssue = {
+            _id: invalidId,
+            open: true,
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .put(endpoint)
+            .type("form")
+            .send(updateIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.badRequest, "Response should have a status of 400 Bad Request");
+                assert.deepEqual(res.body, errorMessage, "Response body should contain the correct error message with the invalid _id");
+                done();
+            });
+    });
+
+
+    test("DELETE successfully deletes an issue with a valid _id", (done) => {
+        let validId = "5871dda29faedc3491ff93bb";
+        let successMessage = { result: "successfully deleted", _id: validId };
+        let deleteIssue = {
+            _id: validId,
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .delete(endpoint)
+            .type("form")
+            .send(deleteIssue)
+            .end((err, res) => {
+                assert.oneOf(res.status, [httpsResponse.ok, httpsResponse.noContent], "Response should be 200 OK or 204 No Content");
+                if (res.status === httpsResponse.ok) {
+                    assert.deepEqual(res.body, successMessage, "Response body should contain the success message for deletion");
+                }
+                done();
+            });
+    });
+
+
+    test("DELETE returns an error when _id is invalid", (done) => {
+        let invalidId = "invalid id";
+        let errorMessage = { error: "could not delete", _id: invalidId };
+        let deleteIssue = {
+            _id: invalidId,
+        };
+        chai
+            .request(server)
+            .keepOpen()
+            .delete(endpoint)
+            .type("form")
+            .send(deleteIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.badRequest, "Response should be 400 Bad Request");
+                assert.deepEqual(res.body, errorMessage, "Response body should contain the error message for invalid _id");
+                done();
+            });
+    });
+
+
+    test("DELETE returns an error when _id is missing", (done) => {
+        let errorMessage = { error: "missing _id" };
+        let deleteIssue = {};
+        chai
+            .request(server)
+            .keepOpen()
+            .delete(endpoint)
+            .type("form")
+            .send(deleteIssue)
+            .end((err, res) => {
+                assert.equal(res.status, httpsResponse.badRequest, "Response should be 400 Bad Request");
+                assert.deepEqual(res.body, errorMessage, "Response body should contain the error message for missing _id");
+                done();
+            });
+    });
+
 });
