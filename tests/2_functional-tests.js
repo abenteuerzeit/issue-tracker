@@ -263,7 +263,7 @@ suite("/api/issues/:project", function () {
                   "Response should have a status of 200 OK"
                 );
                 let updatedIssue = res.body[0];
-                console.log(updateIssue);
+                
                 assert.equal(
                   updatedIssue.open,
                   "false",
@@ -353,7 +353,7 @@ suite("/api/issues/:project", function () {
                   "Response should have a status of 200 OK"
                 );
                 let responseIssue = res.body[0];
-                console.log(responseIssue);
+                
                 Object.keys(responseIssue).forEach((key) => {
                   if (key !== "_id") {
                     assert.equal(
@@ -441,32 +441,55 @@ suite("/api/issues/:project", function () {
   });
 
   test("PUT returns an error when _id is invalid", (done) => {
-    let invalidId = "invalid id";
-    let errorMessage = { error: "could not update", _id: invalidId };
-    let updateIssue = {
-      _id: invalidId,
-      open: true,
+    let newIssue = {
+        issue_title: "Initial title",
+        issue_text: "Initial text",
+        created_by: "Initial creator",
+        assigned_to: "Initial assignee",
+        status_text: "Initial status",
+        open: true,
     };
+
     chai
-      .request(server)
-      .keepOpen()
-      .put(endpoint)
-      .type("form")
-      .send(updateIssue)
-      .end((err, res) => {
-        assert.equal(
-          res.status,
-          httpsResponse.badRequest,
-          "Response should have a status of 400 Bad Request"
-        );
-        assert.deepEqual(
-          res.body,
-          errorMessage,
-          "Response body should contain the correct error message with the invalid _id"
-        );
-        done();
-      });
-  });
+        .request(server)
+        .keepOpen()
+        .post(endpoint)
+        .type("form")
+        .send(newIssue)
+        .end((err, res) => {
+            if (err) done(err);
+
+            assert.equal(res.status, 201, "Response should have a status of 201 Created");
+
+            let validIssueId = res.body._id;
+            let invalidId = validIssueId + "invalid";
+            let errorMessage = { error: "could not update", _id: invalidId };
+            let updateIssue = {
+                _id: invalidId,
+                open: true,
+            };
+
+            chai
+                .request(server)
+                .put(endpoint)
+                .type("form")
+                .send(updateIssue)
+                .end((err, res) => {
+                    assert.equal(
+                        res.status,
+                        httpsResponse.badRequest,
+                        "Response should have a status of 400 Bad Request"
+                    );
+                    assert.deepEqual(
+                        res.body,
+                        errorMessage,
+                        "Response body should contain the correct error message with the invalid _id"
+                    );
+                    done();
+                });
+        });
+});
+
 
   test("DELETE successfully deletes an issue with a valid _id", (done) => {
     let validId = "5871dda29faedc3491ff93bb";

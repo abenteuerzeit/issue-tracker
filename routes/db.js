@@ -64,7 +64,7 @@ const updateIssue = (project, updateData) => {
 
     const issueIndex = projects[project].findIndex(issue => issue._id === updateData._id);
     if (issueIndex === -1) {
-        return { error: 'No issue found with _id', _id: updateData._id };
+        return { error: 'could not update', _id: updateData._id };
     }
 
     for (let key in updateData) {
