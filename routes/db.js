@@ -85,7 +85,7 @@ const deleteIssue = (project, _id) => {
 
     const issueIndex = projects[project].findIndex(issue => issue._id === _id);
     if (issueIndex === -1) {
-        return { error: 'No issue found with _id', _id };
+        return { error: 'could not delete', _id };
     }
 
     projects[project].splice(issueIndex, 1);

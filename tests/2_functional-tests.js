@@ -227,7 +227,7 @@ suite("/api/issues/:project", function () {
           _id: issueId,
           open: false,
         };
-        
+
 
         chai
           .request(server)
@@ -247,7 +247,7 @@ suite("/api/issues/:project", function () {
               "successfully updated",
               "Response should indicate successful update"
             );
-            
+
 
             chai
               .request(server)
@@ -263,7 +263,7 @@ suite("/api/issues/:project", function () {
                   "Response should have a status of 200 OK"
                 );
                 let updatedIssue = res.body[0];
-                
+
                 assert.equal(
                   updatedIssue.open,
                   "false",
@@ -353,7 +353,7 @@ suite("/api/issues/:project", function () {
                   "Response should have a status of 200 OK"
                 );
                 let responseIssue = res.body[0];
-                
+
                 Object.keys(responseIssue).forEach((key) => {
                   if (key !== "_id") {
                     assert.equal(
@@ -442,110 +442,149 @@ suite("/api/issues/:project", function () {
 
   test("PUT returns an error when _id is invalid", (done) => {
     let newIssue = {
-        issue_title: "Initial title",
-        issue_text: "Initial text",
-        created_by: "Initial creator",
-        assigned_to: "Initial assignee",
-        status_text: "Initial status",
+      issue_title: "Initial title",
+      issue_text: "Initial text",
+      created_by: "Initial creator",
+      assigned_to: "Initial assignee",
+      status_text: "Initial status",
+      open: true,
+    };
+
+    chai
+      .request(server)
+      .keepOpen()
+      .post(endpoint)
+      .type("form")
+      .send(newIssue)
+      .end((err, res) => {
+        if (err) done(err);
+
+        assert.equal(res.status, 201, "Response should have a status of 201 Created");
+
+        let validIssueId = res.body._id;
+        let invalidId = validIssueId + "invalid";
+        let errorMessage = { error: "could not update", _id: invalidId };
+        let updateIssue = {
+          _id: invalidId,
+          open: true,
+        };
+
+        chai
+          .request(server)
+          .put(endpoint)
+          .type("form")
+          .send(updateIssue)
+          .end((err, res) => {
+            assert.equal(
+              res.status,
+              httpsResponse.badRequest,
+              "Response should have a status of 400 Bad Request"
+            );
+            assert.deepEqual(
+              res.body,
+              errorMessage,
+              "Response body should contain the correct error message with the invalid _id"
+            );
+            done();
+          });
+      });
+  });
+
+
+  test("DELETE successfully deletes an issue with a valid _id", (done) => {
+    let newIssue = {
+      issue_title: "Title for deletion",
+      issue_text: "Text for deletion",
+      created_by: "Creator for deletion",
+      assigned_to: "Assignee for deletion",
+      status_text: "Status for deletion",
+      open: true,
+    };
+
+    chai
+      .request(server)
+      .post(endpoint)
+      .type("form")
+      .send(newIssue)
+      .end((err, res) => {
+        if (err) done(err);
+
+        assert.equal(res.status, httpsResponse.created, "Response should have a status of 201 Created");
+        let validId = res.body._id;
+
+        let successMessage = { result: "successfully deleted", _id: validId };
+        let deleteIssue = { _id: validId };
+
+        chai
+          .request(server)
+          .delete(endpoint)
+          .type("form")
+          .send(deleteIssue)
+          .end((err, res) => {
+            assert.oneOf(
+              res.status,
+              [httpsResponse.ok, httpsResponse.noContent],
+              "Response should be 200 OK or 204 No Content"
+            );
+
+            assert.deepEqual(
+              res.body,
+              successMessage,
+              "Response body should contain the success message for deletion"
+            );
+
+            done();
+          });
+      });
+  });
+
+
+  test("DELETE returns an error when _id is invalid", (done) => {
+    let newIssue = {
+        issue_title: "Title for deletion",
+        issue_text: "Text for deletion",
+        created_by: "Creator for deletion",
+        assigned_to: "Assignee for deletion",
+        status_text: "Status for deletion",
         open: true,
     };
 
     chai
         .request(server)
-        .keepOpen()
         .post(endpoint)
         .type("form")
         .send(newIssue)
         .end((err, res) => {
             if (err) done(err);
 
-            assert.equal(res.status, 201, "Response should have a status of 201 Created");
-
-            let validIssueId = res.body._id;
-            let invalidId = validIssueId + "invalid";
-            let errorMessage = { error: "could not update", _id: invalidId };
-            let updateIssue = {
-                _id: invalidId,
-                open: true,
-            };
+            assert.equal(res.status, httpsResponse.created, "Response should have a status of 201 Created");
+            let validId = res.body._id;
+            let invalidId = validId + "invalid";
+            let errorMessage = { error: "could not delete", _id: invalidId };
+            let deleteIssue = { _id: invalidId };
 
             chai
                 .request(server)
-                .put(endpoint)
+                .delete(endpoint)
                 .type("form")
-                .send(updateIssue)
+                .send(deleteIssue)
                 .end((err, res) => {
+                    console.log(res.body);
                     assert.equal(
                         res.status,
                         httpsResponse.badRequest,
-                        "Response should have a status of 400 Bad Request"
+                        "Response should be 400 Bad Request"
                     );
                     assert.deepEqual(
                         res.body,
                         errorMessage,
-                        "Response body should contain the correct error message with the invalid _id"
+                        "Response body should contain the error message for invalid _id"
                     );
                     done();
                 });
         });
 });
 
-
-  test("DELETE successfully deletes an issue with a valid _id", (done) => {
-    let validId = "5871dda29faedc3491ff93bb";
-    let successMessage = { result: "successfully deleted", _id: validId };
-    let deleteIssue = {
-      _id: validId,
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .delete(endpoint)
-      .type("form")
-      .send(deleteIssue)
-      .end((err, res) => {
-        assert.oneOf(
-          res.status,
-          [httpsResponse.ok, httpsResponse.noContent],
-          "Response should be 200 OK or 204 No Content"
-        );
-        if (res.status === httpsResponse.ok) {
-          assert.deepEqual(
-            res.body,
-            successMessage,
-            "Response body should contain the success message for deletion"
-          );
-        }
-        done();
-      });
-  });
-
-  test("DELETE returns an error when _id is invalid", (done) => {
-    let invalidId = "invalid id";
-    let errorMessage = { error: "could not delete", _id: invalidId };
-    let deleteIssue = {
-      _id: invalidId,
-    };
-    chai
-      .request(server)
-      .keepOpen()
-      .delete(endpoint)
-      .type("form")
-      .send(deleteIssue)
-      .end((err, res) => {
-        assert.equal(
-          res.status,
-          httpsResponse.badRequest,
-          "Response should be 400 Bad Request"
-        );
-        assert.deepEqual(
-          res.body,
-          errorMessage,
-          "Response body should contain the error message for invalid _id"
-        );
-        done();
-      });
-  });
 
   test("DELETE returns an error when _id is missing", (done) => {
     let errorMessage = { error: "missing _id" };
