@@ -159,32 +159,59 @@ suite("/api/issues/:project", function() {
             });
     });
 
-
     test("PUT updates issue fields and updated_on timestamp when a single field is updated", (done) => {
-        let updateIssue = {
-            _id: "5871dda29faedc3491ff93bb",
-            open: false,
-        };
-        chai
-            .request(server)
-            .keepOpen()
-            .put(endpoint)
-            .type("form")
-            .send(updateIssue)
-            .end((err, res) => {
-                assert.equal(res.status, httpsResponse.ok, "Response should have a status of 200 OK");
-                assert.equal(res.body.result, "successfully updated", "Response should indicate successful update");
-
-                assert.isFalse(res.body.open, "Issue open status should be updated to false");
-
-                assert.exists(res.body.updated_on, "updated_on timestamp should exist");
-                assert.notEqual(res.body.updated_on, res.body.created_on, "updated_on timestamp should differ from created_on timestamp");
-
-                done();
-            });
-    });
-
-
+      let newIssue = {
+          issue_title: "new title",
+          issue_text: "new text",
+          created_by: "Test",
+          assigned_to: "Adrian",
+          status_text: "new status text",
+      };
+  
+      chai.request(server)
+          .post(endpoint)
+          .type("form")
+          .send(newIssue)
+          .end((err, res) => {
+              if (err) done(err);
+  
+              assert.equal(res.status, 201, "Response should have a status of 201 Created");
+              let issueId = res.body._id;
+              let updateIssue = { 
+                  _id: issueId,
+                  open: false 
+              };
+              console.log(res.body);
+  
+              chai.request(server)
+                  .put(endpoint)
+                  .type("form")
+                  .send(updateIssue)
+                  .end((err, res) => {
+                      if (err) done(err);
+                      assert.equal(res.status, 200, "Response should have a status of 200 OK");
+                      assert.equal(res.body.result, "successfully updated", "Response should indicate successful update");
+                      console.log(res.body);
+  
+                      chai.request(server)
+                          .get(endpoint)
+                          .query({_id: issueId})
+                          .end((err, res) => {
+                              if (err) done(err);
+                                assert.equal(res.status, 200, "Response should have a status of 200 OK");
+                              let updatedIssue = res.body[0];
+                              console.log(updateIssue);
+                              assert.equal(updatedIssue.open, 'false', "Issue open status should be updated to false");
+                              assert.exists(updatedIssue.updated_on, "updated_on timestamp should exist");
+                              assert.notEqual(updatedIssue.updated_on, updatedIssue.created_on, "updated_on timestamp should differ from created_on timestamp");
+  
+                              done();
+                          });
+                  });
+          });
+  });
+  
+  
     test("PUT updates issue fields and updated_on timestamp when multiple fields are updated", (done) => {
         let updateIssue = {
             _id: "5871dda29faedc3491ff93bb",
